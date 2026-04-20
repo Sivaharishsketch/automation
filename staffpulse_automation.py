@@ -35,16 +35,16 @@ from selenium.common.exceptions import (
 USERS = [
     {
         "name": "SHIVA",
-        "email": "sivaharish@cloudrevelinnovation.com",          # <- User 1 email
+        "email": "sivaharish.com",          # <- User 1 email
         "password": "@'sz75_U]K;-Z%7",  # <- User 1 password    
         },
     {
         "name": "DHARSHU",
-        "email": "dharshini@cloudrevelinnovation.com",         # <- User 2 email
+        "email": "dharshini",         # <- User 2 email
         "password": "Krithick@123",  # <- User 2 password    
  },{
         "name": "VP",
-        "email": "vigneshpandian@cloudrevelinnovation.com",         # <- User 3 email
+        "email": "vigneshpandian",         # <- User 3 email
         "password": "Pandi@123",  # <- User 3 password    
         }
 ]
