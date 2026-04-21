@@ -31,6 +31,8 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
@@ -102,8 +104,12 @@ def get_driver():
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-notifications")
-    options.binary_location = os.environ.get("CHROMIUM_PATH", "/usr/bin/chromium")
-    driver = webdriver.Chrome(options=options)
+    chromium_path = os.environ.get("CHROMIUM_PATH")
+    if chromium_path:
+        options.binary_location = chromium_path
+    
+    # Use webdriver_manager to safely fetch matching driver automatically
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.implicitly_wait(10)
     return driver
 
@@ -332,11 +338,15 @@ def main():
     current_time = datetime.now().time()
     if action == "checkin":
         if current_time < datetime.strptime("08:50", "%H:%M").time():
-            print(f"Current time {current_time.strftime('%H:%M')} is before 08:50 AM. Too early for check in! Exiting.")
+            msg = f"Current time {current_time.strftime('%H:%M')} is before 08:50 AM. Too early for check in! Exiting."
+            print(msg)
+            send_telegram(msg)
             sys.exit(0)
     elif action == "checkout":
         if current_time < datetime.strptime("18:50", "%H:%M").time():
-            print(f"Current time {current_time.strftime('%H:%M')} is before 18:50. Too early for check out! Exiting.")
+            msg = f"Current time {current_time.strftime('%H:%M')} is before 18:50. Too early for check out! Exiting."
+            print(msg)
+            send_telegram(msg)
             sys.exit(0)
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
