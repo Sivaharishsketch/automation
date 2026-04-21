@@ -270,9 +270,12 @@ def do_checkin(driver):
         except NoSuchElementException:
             pass
 
+        checked_time = datetime.now().strftime("%I:%M %p")
         log.info(f"  CHECK IN done at {datetime.now().strftime('%H:%M:%S')}")
+        return True, checked_time
     except TimeoutException:
         log.info("  Check In button not found. Already check in panniyachi! ✓")
+        return True, "Already Checked In"
 
 
 def do_checkout(driver):
@@ -292,9 +295,12 @@ def do_checkout(driver):
         else:
             log.info("  No secondary checkout confirmation button found")
 
+        checked_time = datetime.now().strftime("%I:%M %p")
         log.info(f"  CHECK OUT done at {datetime.now().strftime('%H:%M:%S')}")
+        return True, checked_time
     except TimeoutException:
         log.info("  Check Out button not found. Already check out panniyachi! ✓")
+        return True, "Already Checked Out"
 
 
 def run_for_user(user, action):
@@ -307,11 +313,18 @@ def run_for_user(user, action):
         go_to_my_people(driver)
 
         if action == "checkin":
-            do_checkin(driver)
+            success, chk_time = do_checkin(driver)
         else:
-            do_checkout(driver)
+            success, chk_time = do_checkout(driver)
 
         log.info(f"-- {user['name']} DONE --\n")
+        
+        action_name = "Check-IN" if action == "checkin" else "Check-OUT"
+        if chk_time.startswith("Already"):
+            send_telegram(f"✅ <b>{action_name}</b> already done for <b>{user['name']}</b>.")
+        else:
+            send_telegram(f"✅ <b>{action_name}</b> Done for <b>{user['name']}</b> with checked time <b>{chk_time}</b>")
+            
         return True
 
     except Exception as e:
@@ -320,6 +333,9 @@ def run_for_user(user, action):
             screenshot_path = f"/tmp/staffpulse_error_{user['name'].replace(' ', '_')}_{action}.png"
             driver.save_screenshot(screenshot_path)
             log.info(f"  Screenshot saved: {screenshot_path}")
+            
+        action_name = "Check-IN" if action == "checkin" else "Check-OUT"
+        send_telegram(f"❌ <b>{action_name}</b> Failed for <b>{user['name']}</b>. Error occurred.")
         return False
 
     finally:
@@ -337,14 +353,14 @@ def main():
     
     current_time = datetime.now().time()
     if action == "checkin":
-        if current_time < datetime.strptime("08:50", "%H:%M").time():
-            msg = f"Current time {current_time.strftime('%H:%M')} is before 08:50 AM. Too early for check in! Exiting."
+        if current_time < datetime.strptime("08:45", "%H:%M").time():
+            msg = f"Current time {current_time.strftime('%H:%M')} is before 08:45 AM. Too early for check in! Exiting."
             print(msg)
             send_telegram(msg)
             sys.exit(0)
     elif action == "checkout":
-        if current_time < datetime.strptime("18:50", "%H:%M").time():
-            msg = f"Current time {current_time.strftime('%H:%M')} is before 18:50. Too early for check out! Exiting."
+        if current_time < datetime.strptime("18:45", "%H:%M").time():
+            msg = f"Current time {current_time.strftime('%H:%M')} is before 18:45. Too early for check out! Exiting."
             print(msg)
             send_telegram(msg)
             sys.exit(0)
@@ -364,16 +380,10 @@ def main():
     # Summary
     log.info("=" * 50)
     log.info("SUMMARY:")
-    lines = []
     for name, success in results:
         status = "SUCCESS" if success else "FAILED"
-        icon  = "✅" if success else "❌"
         log.info(f"  {name}: {status}")
-        lines.append(f"{icon} {name}: {status}")
     log.info("=" * 50 + "\n")
-
-    msg = f"<b>StaffPulse {action.upper()}</b> — {now}\n" + "\n".join(lines)
-    send_telegram(msg)
 
     # Exit with error if any user failed
     if not all(s for _, s in results):
