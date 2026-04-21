@@ -15,7 +15,7 @@ if weekday < 6:
         subprocess.run(["python3", "/app/staffpulse_automation.py", "checkin"])
 
     # Checkout → 13:20 UTC
-    elif now.hour == 13 and now.minute == 20:
+    elif now.hour == 13 and now.minute == 35:
         print("Running CHECKOUT")
         subprocess.run(["python3", "/app/staffpulse_automation.py", "checkout"])
 
