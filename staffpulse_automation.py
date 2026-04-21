@@ -17,6 +17,16 @@ import logging
 import os
 import urllib.request
 import urllib.parse
+
+# Load .env file automatically
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+if os.path.exists(env_path):
+    with open(env_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, val = line.split('=', 1)
+                os.environ[key.strip()] = val.strip(' "\'')
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -34,20 +44,24 @@ from selenium.common.exceptions import (
 # ─────────────────────────────────────────
 USERS = [
     {
-        "name": "SHIVA",
-        "email": "sivaharish.com",          # <- User 1 email
-        "password": "@'sz75_U]K;-Z%7",  # <- User 1 password    
-        },
+        "name": os.environ.get("USER1_NAME", "SHIVA"),
+        "email": os.environ.get("USER1_EMAIL"),
+        "password": os.environ.get("USER1_PASSWORD"),
+    },
     {
-        "name": "DHARSHU",
-        "email": "dharshini",         # <- User 2 email
-        "password": "Krithick@123",  # <- User 2 password    
- },{
-        "name": "VP",
-        "email": "vigneshpandian",         # <- User 3 email
-        "password": "Pandi@123",  # <- User 3 password    
-        }
+        "name": os.environ.get("USER2_NAME", "DHARSHU"),
+        "email": os.environ.get("USER2_EMAIL"),
+        "password": os.environ.get("USER2_PASSWORD"),
+    },
+    {
+        "name": os.environ.get("USER3_NAME", "VP"),
+        "email": os.environ.get("USER3_EMAIL"),
+        "password": os.environ.get("USER3_PASSWORD"),
+    }
 ]
+
+# Filtering out users that don't have email or password configured in env
+USERS = [u for u in USERS if u.get("email") and u.get("password")]
 # ─────────────────────────────────────────
 
 LOGIN_URL = "https://staffpulse.in/auth/login"
@@ -317,8 +331,8 @@ def main():
     
     current_time = datetime.now().time()
     if action == "checkin":
-        if current_time < datetime.strptime("08:45", "%H:%M").time():
-            print(f"Current time {current_time.strftime('%H:%M')} is before 08:45 AM. Too early for check in! Exiting.")
+        if current_time < datetime.strptime("08:50", "%H:%M").time():
+            print(f"Current time {current_time.strftime('%H:%M')} is before 08:50 AM. Too early for check in! Exiting.")
             sys.exit(0)
     elif action == "checkout":
         if current_time < datetime.strptime("18:50", "%H:%M").time():
