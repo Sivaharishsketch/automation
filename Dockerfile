@@ -10,6 +10,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY staffpulse_automation.py .
+COPY scheduler.py .
 
 ENV PYTHONUNBUFFERED=1
 CMD ["echo", "Use Railway cron jobs to trigger checkin/checkout"]

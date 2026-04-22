@@ -49,7 +49,7 @@ if weekday < 6:  # Mon-Sat
             logging.info("Running CHECKIN")
 
             subprocess.run(
-                ["python3", "app/staffpulse_automation.py", "checkin"],
+                ["python3", "staffpulse_automation.py", "checkin"],
                 check=True
             )
 
@@ -64,7 +64,7 @@ if weekday < 6:  # Mon-Sat
             logging.info("Running CHECKOUT")
 
             subprocess.run(
-                ["python3", "app/staffpulse_automation.py", "checkout"],
+                ["python3", "staffpulse_automation.py", "checkout"],
                 check=True
             )
 
