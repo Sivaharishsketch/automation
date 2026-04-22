@@ -98,18 +98,15 @@ log = logging.getLogger(__name__)
 def get_driver():
     """Headless Chrome driver setup."""
     options = Options()
+    options.binary_location = "/usr/bin/chromium"
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-notifications")
-    chromium_path = os.environ.get("CHROMIUM_PATH")
-    if chromium_path:
-        options.binary_location = chromium_path
     
-    # Use webdriver_manager to safely fetch matching driver automatically
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver = webdriver.Chrome(options=options)
     driver.implicitly_wait(10)
     return driver
 

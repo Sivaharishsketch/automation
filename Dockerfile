@@ -1,16 +1,16 @@
 FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y \
-    chromium chromium-driver \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
-COPY requirements.txt .
+
+COPY . .
+
+# Install Chromium + driver
+RUN apt-get update && apt-get install -y \
+    chromium \
+    chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install python packages
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY staffpulse_automation.py .
-COPY scheduler.py .
-
-ENV PYTHONUNBUFFERED=1
-CMD ["echo", "Use Railway cron jobs to trigger checkin/checkout"]
+CMD ["python3", "staffpulse_automation.py", "checkout"]
