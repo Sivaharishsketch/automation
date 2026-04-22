@@ -17,6 +17,7 @@ import logging
 import os
 import urllib.request
 import urllib.parse
+from zoneinfo import ZoneInfo
 
 # Load .env file automatically
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
@@ -67,6 +68,7 @@ USERS = [u for u in USERS if u.get("email") and u.get("password")]
 # ─────────────────────────────────────────
 
 LOGIN_URL = "https://staffpulse.in/auth/login"
+IST = ZoneInfo("Asia/Kolkata")
 
 # ─────────────────────────────────────────
 # TELEGRAM CONFIG — set via env vars or fill here
@@ -276,8 +278,8 @@ def do_checkin(driver):
         except NoSuchElementException:
             pass
 
-        checked_time = datetime.now().strftime("%I:%M %p")
-        log.info(f"  CHECK IN done at {datetime.now().strftime('%H:%M:%S')}")
+        checked_time = datetime.now(IST).strftime("%I:%M %p")
+        log.info(f"  CHECK IN done at {datetime.now(IST).strftime('%H:%M:%S')}")
         return True, checked_time
     except TimeoutException:
         log.info("  Check In button not found. Already check in panniyachi! ✓")
@@ -301,8 +303,8 @@ def do_checkout(driver):
         else:
             log.info("  No secondary checkout confirmation button found")
 
-        checked_time = datetime.now().strftime("%I:%M %p")
-        log.info(f"  CHECK OUT done at {datetime.now().strftime('%H:%M:%S')}")
+        checked_time = datetime.now(IST).strftime("%I:%M %p")
+        log.info(f"  CHECK OUT done at {datetime.now(IST).strftime('%H:%M:%S')}")
         return True, checked_time
     except TimeoutException:
         log.info("  Check Out button not found. Already check out panniyachi! ✓")
@@ -357,7 +359,7 @@ def main():
 
     action = sys.argv[1]
     
-    current_time = datetime.now().time()
+    current_time = datetime.now(IST).time()
     if action == "checkin":
         if current_time < datetime.strptime("08:45", "%H:%M").time():
             msg = f"Current time {current_time.strftime('%H:%M')} is before 08:45 AM. Too early for check in! Exiting."
@@ -371,7 +373,7 @@ def main():
             send_telegram(msg)
             sys.exit(0)
 
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
 
     log.info("=" * 50)
     log.info(f"StaffPulse Automation | {action.upper()} | {now}")
