@@ -34,46 +34,30 @@ def create_lock(lock_file):
     with open(lock_file, "w") as f:
         f.write(datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d"))
 
+import time
+
 # ---------- MAIN ----------
-now = datetime.now(ZoneInfo("Asia/Kolkata"))
-weekday = now.weekday()
+logging.info("Starting continuous scheduler... (Checking every 1 minute)")
 
-logging.info(f"Scheduler running at IST: {now}")
+while True:
+    now = datetime.now(ZoneInfo("Asia/Kolkata"))
+    weekday = now.weekday()
 
-if weekday < 6:  # Mon-Sat
+    if weekday < 6:  # Mon-Sat
 
-    # ✅ CHECKIN → 8:50–8:55 AM IST
-    if now.hour == 9 and 25 <= now.minute <= 30:
+        # ✅ CHECKIN → 8:50–8:55 AM IST
+        if now.hour == 9 and 25 <= now.minute <= 30:
+            if not is_locked(CHECKIN_LOCK):
+                logging.info(f"[{now.time()}] Running CHECKIN")
+                subprocess.run(["python3", "staffpulse_automation.py", "checkin"], check=True)
+                create_lock(CHECKIN_LOCK)
 
-        if not is_locked(CHECKIN_LOCK):
-            logging.info("Running CHECKIN")
+        # ✅ CHECKOUT → 6:50–6:55 PM IST
+        elif now.hour == 18 and 50 <= now.minute <= 55:
+            if not is_locked(CHECKOUT_LOCK):
+                logging.info(f"[{now.time()}] Running CHECKOUT")
+                subprocess.run(["python3", "staffpulse_automation.py", "checkout"], check=True)
+                create_lock(CHECKOUT_LOCK)
 
-            subprocess.run(
-                ["python3", "staffpulse_automation.py", "checkin"],
-                check=True
-            )
-
-            create_lock(CHECKIN_LOCK)
-        else:
-            logging.info("CHECKIN already done today")
-
-    # ✅ CHECKOUT → 6:50–6:55 PM IST
-    elif now.hour == 18 and 50 <= now.minute <= 55:
-
-        if not is_locked(CHECKOUT_LOCK):
-            logging.info("Running CHECKOUT")
-
-            subprocess.run(
-                ["python3", "staffpulse_automation.py", "checkout"],
-                check=True
-            )
-
-            create_lock(CHECKOUT_LOCK)
-        else:
-            logging.info("CHECKOUT already done today")
-
-    else:
-        logging.info("No task in this window")
-
-else:
-    logging.info("Sunday - No run")
+    # Sleep for exactly 1 minute before checking again
+    time.sleep(60)

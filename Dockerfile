@@ -11,6 +11,6 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python packages
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --disable-pip-version-check --root-user-action=ignore -r requirements.txt
 
-CMD ["python3", "staffpulse_automation.py", "checkout"]
+CMD ["python3", "scheduler.py"]
