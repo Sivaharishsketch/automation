@@ -31,6 +31,8 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
@@ -96,7 +98,7 @@ log = logging.getLogger(__name__)
 def get_driver():
     """Headless Chrome driver setup."""
     options = Options()
-    options.binary_location = "/usr/bin/chromium"
+    
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
@@ -104,7 +106,16 @@ def get_driver():
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-notifications")
     
-    driver = webdriver.Chrome(options=options)
+    # Check if we're in Docker/Railway (chromium is installed at /usr/bin/chromium via apt-get)
+    if os.path.exists("/usr/bin/chromium"):
+        options.binary_location = "/usr/bin/chromium"
+        service = Service("/usr/bin/chromedriver")
+        driver = webdriver.Chrome(service=service, options=options)
+    else:
+        # Local execution using webdriver_manager
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+        
     driver.implicitly_wait(10)
     return driver
 

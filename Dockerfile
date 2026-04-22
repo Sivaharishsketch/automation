@@ -13,4 +13,4 @@ RUN apt-get update && apt-get install -y \
 # Install python packages
 RUN pip install --no-cache-dir --disable-pip-version-check --root-user-action=ignore -r requirements.txt
 
-CMD ["python3", "scheduler.py"]
+CMD ["python3", "telegram_bot.py"]
