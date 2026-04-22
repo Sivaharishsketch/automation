@@ -31,6 +31,7 @@ if os.path.exists(env_path):
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -199,7 +200,7 @@ def click_confirmation_button(driver):
 def wait_and_type(driver, by, selector, text, timeout=20, label="field"):
     try:
         el = WebDriverWait(driver, timeout).until(
-            EC.presence_of_element_located((by, selector))
+            EC.visibility_of_element_located((by, selector))
         )
         el.clear()
         el.send_keys(text)
@@ -210,6 +211,37 @@ def wait_and_type(driver, by, selector, text, timeout=20, label="field"):
         raise
 
 
+def wait_for_password_field(driver, timeout=12):
+    password_selector = (
+        "input[type='password'], "
+        "input[name='password'], "
+        "input[placeholder*='Password'], "
+        "input[placeholder*='password']"
+    )
+    return WebDriverWait(driver, timeout).until(
+        EC.visibility_of_element_located((By.CSS_SELECTOR, password_selector))
+    )
+
+
+def log_login_debug_info(driver):
+    current_url = driver.current_url
+    title = driver.title
+    visible_inputs = driver.execute_script(
+        """
+        return Array.from(document.querySelectorAll('input'))
+            .filter(el => el.offsetParent !== null)
+            .map(el => ({
+                type: el.type || '',
+                name: el.name || '',
+                placeholder: el.placeholder || ''
+            }));
+        """
+    )
+    log.warning(f"  Login debug URL: {current_url}")
+    log.warning(f"  Login debug title: {title}")
+    log.warning(f"  Visible inputs after Next: {visible_inputs}")
+
+
 def login(driver, email, password):
     """Login with email and password."""
     log.info(f"  Opening: {LOGIN_URL}")
@@ -217,21 +249,47 @@ def login(driver, email, password):
     time.sleep(2)
 
     # Step 1: Enter email
-    wait_and_type(driver, By.CSS_SELECTOR,
-                  "input[type='email'], input[type='text'], input[placeholder*='email'], input[placeholder*='Email'], input[name='email'], input[name='username']",
-                  email, label="Email field")
+    email_field = wait_and_type(
+        driver,
+        By.CSS_SELECTOR,
+        "input[type='email'], input[type='text'], input[placeholder*='email'], input[placeholder*='Email'], input[name='email'], input[name='username']",
+        email,
+        label="Email field",
+    )
     time.sleep(1)
 
     # Step 2: Click Next
-    wait_and_click(driver, By.XPATH,
-                   "//button[contains(.,'Next')]",
-                   label="Next button")
-    time.sleep(2)
+    next_button = wait_and_click(
+        driver,
+        By.XPATH,
+        "//button[contains(.,'Next')]",
+        label="Next button",
+    )
+
+    try:
+        wait_for_password_field(driver, timeout=12)
+    except TimeoutException:
+        log.warning("  Password field not visible after first Next click, retrying...")
+        try:
+            safe_click(driver, next_button, label="Next button retry")
+            wait_for_password_field(driver, timeout=8)
+        except TimeoutException:
+            log.warning("  Retry click also failed, trying Enter on email field...")
+            email_field.send_keys(Keys.ENTER)
+            try:
+                wait_for_password_field(driver, timeout=8)
+            except TimeoutException:
+                log_login_debug_info(driver)
+                raise
 
     # Step 3: Enter password
-    wait_and_type(driver, By.CSS_SELECTOR,
-                  "input[type='password']",
-                  password, label="Password field")
+    wait_and_type(
+        driver,
+        By.CSS_SELECTOR,
+        "input[type='password'], input[name='password'], input[placeholder*='Password'], input[placeholder*='password']",
+        password,
+        label="Password field",
+    )
     time.sleep(1)
 
     # Step 4: Click Sign In
