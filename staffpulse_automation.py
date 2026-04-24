@@ -6,9 +6,9 @@ Usage:
     python3 staffpulse_automation.py checkin
     python3 staffpulse_automation.py checkout
 
-Cron setup (Monday to Friday):
-    50 8  * * 1-5  /usr/bin/python3 /home/<user>/staffpulse_automation.py checkin  >> ~/staffpulse.log 2>&1
-    50 18 * * 1-5  /usr/bin/python3 /home/<user>/staffpulse_automation.py checkout >> ~/staffpulse.log 2>&1
+Cron setup (Monday to Saturday):
+   50 18 * * 1-6 /usr/bin/python3 /home/sivaharishj/Desktop/ORGANIZED/PERSONAL\ DOCS/AUTOMATION/staffpulse_automation.py checkout >> /home/sivaharishj/staffpulse.log 2>&1
+50 8 * * 1-6 /usr/bin/python3 /home/sivaharishj/Desktop/ORGANIZED/PERSONAL\ DOCS/AUTOMATION/staffpulse_automation.py checkin >> /home/sivaharishj/staffpulse.log 2>&1
 """
 
 import sys
@@ -34,7 +34,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
@@ -102,7 +101,7 @@ def get_driver():
     """Headless Chrome driver setup."""
     options = Options()
     
-    options.add_argument("--headless")
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
@@ -115,9 +114,8 @@ def get_driver():
         service = Service("/usr/bin/chromedriver")
         driver = webdriver.Chrome(service=service, options=options)
     else:
-        # Local execution using webdriver_manager
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=options)
+        # GitHub Actions and local execution using built-in Selenium Manager
+        driver = webdriver.Chrome(options=options)
         
     driver.implicitly_wait(10)
     return driver
@@ -416,20 +414,22 @@ def main():
         sys.exit(1)
 
     action = sys.argv[1]
+    bypass_time = os.environ.get("BYPASS_TIME_CHECK", "false").lower() == "true"
     
     current_time = datetime.now(IST).time()
-    if action == "checkin":
-        if current_time < datetime.strptime("08:45", "%H:%M").time():
-            msg = f"Current time {current_time.strftime('%H:%M')} is before 08:45 AM. Too early for check in! Exiting."
-            print(msg)
-            send_telegram(msg)
-            sys.exit(0)
-    elif action == "checkout":
-        if current_time < datetime.strptime("18:45", "%H:%M").time():
-            msg = f"Current time {current_time.strftime('%H:%M')} is before 18:45. Too early for check out! Exiting."
-            print(msg)
-            send_telegram(msg)
-            sys.exit(0)
+    if not bypass_time:
+        if action == "checkin":
+            if current_time < datetime.strptime("08:45", "%H:%M").time():
+                msg = f"Current time {current_time.strftime('%H:%M')} is before 08:45 AM. Too early for check in! Exiting."
+                print(msg)
+                send_telegram(msg)
+                sys.exit(0)
+        elif action == "checkout":
+            if current_time < datetime.strptime("18:45", "%H:%M").time():
+                msg = f"Current time {current_time.strftime('%H:%M')} is before 18:45. Too early for check out! Exiting."
+                print(msg)
+                send_telegram(msg)
+                sys.exit(0)
 
     now = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
 
