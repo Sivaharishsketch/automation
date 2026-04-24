@@ -2,13 +2,16 @@ name: StaffPulse Automation
 
 on:
   schedule:
-    - cron: '20 3 * * 1-6'   # 8:50 AM IST
-    - cron: '20 13 * * 1-6'  # 6:50 PM IST
-  workflow_dispatch: # manual trigger
+    - cron: '20 3 * * 1-6'
+    - cron: '20 13 * * 1-6'
+  workflow_dispatch:
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # ✅ ADD THIS
 
     steps:
       - name: Checkout code
@@ -22,10 +25,5 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run Checkin (Morning)
-        if: github.event.schedule == '20 3 * * 1-6'
+      - name: Run script
         run: python staffpulse_automation.py checkin
-
-      - name: Run Checkout (Evening)
-        if: github.event.schedule == '20 13 * * 1-6'
-        run: python staffpulse_automation.py checkout
