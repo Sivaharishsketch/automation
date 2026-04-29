@@ -34,6 +34,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
@@ -100,23 +101,21 @@ log = logging.getLogger(__name__)
 def get_driver():
     """Headless Chrome driver setup."""
     options = Options()
-    
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-notifications")
-    
-    # Check if we're in Docker/Railway (chromium is installed at /usr/bin/chromium via apt-get)
+
     if os.path.exists("/usr/bin/chromium"):
         options.binary_location = "/usr/bin/chromium"
         service = Service("/usr/bin/chromedriver")
-        driver = webdriver.Chrome(service=service, options=options)
     else:
-        # GitHub Actions and local execution using built-in Selenium Manager
-        driver = webdriver.Chrome(options=options)
-        
+        options.binary_location = "/opt/google/chrome/google-chrome"
+        service = Service(ChromeDriverManager().install())
+
+    driver = webdriver.Chrome(service=service, options=options)
     driver.implicitly_wait(10)
     return driver
 
