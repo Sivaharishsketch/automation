@@ -17,6 +17,7 @@ import logging
 import os
 import urllib.request
 import urllib.parse
+import concurrent.futures
 from zoneinfo import ZoneInfo
 
 # Load .env file automatically
@@ -438,9 +439,16 @@ def main():
     log.info("=" * 50 + "\n")
 
     results = []
-    for user in USERS:
-        success = run_for_user(user, action)
-        results.append((user["name"], success))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(USERS)) as executor:
+        future_to_user = {executor.submit(run_for_user, user, action): user for user in USERS}
+        for future in concurrent.futures.as_completed(future_to_user):
+            user = future_to_user[future]
+            try:
+                success = future.result()
+            except Exception as exc:
+                log.error(f"-- {user['name']} generated an exception: {exc} --\n")
+                success = False
+            results.append((user["name"], success))
 
     # Summary
     log.info("=" * 50)
